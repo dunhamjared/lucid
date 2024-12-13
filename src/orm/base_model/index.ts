@@ -1742,6 +1742,11 @@ class BaseModelImpl implements LucidRow {
      * Merge values with the attributes
      */
     if (isObject(values)) {
+
+      if(values instanceof BaseModel){
+        values = values.$attributes
+      }
+      
       Object.keys(values).forEach((key) => {
         const value = values[key]
 
