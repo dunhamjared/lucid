@@ -601,7 +601,7 @@ test.group('Base Model | getter-setters', (group) => {
     assert.equal(mergedUser.email, 'virk@adonisjs.com')
   })
 
-  test('merge mutiple model instances', async ({ fs, assert }) => {
+  test('merge multiple model instances', async ({ fs, assert }) => {
     const app = new AppFactory().create(fs.baseUrl, () => {})
     await app.init()
     const db = getDb()
