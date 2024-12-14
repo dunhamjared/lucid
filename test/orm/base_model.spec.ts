@@ -563,6 +563,84 @@ test.group('Base Model | getter-setters', (group) => {
     assert.equal(user.toJSON().username, 'VIRK')
   })
 
+  test('merge two model instances', async ({ fs, assert }) => {
+    const app = new AppFactory().create(fs.baseUrl, () => {})
+    const adapter = new FakeAdapter()
+    await app.init()
+
+    const BaseModel = getBaseModel(adapter)
+
+    class User extends BaseModel {
+      @column({ isPrimary: true })
+      declare id: number
+
+      @column()
+      declare username: string
+
+      @column()
+      declare email: string
+    }
+
+    User.$adapter = adapter
+
+    // Create the current user
+    const currentUser = new User()
+    currentUser.username = 'virk'
+    currentUser.email = 'virk@adonisjs.com'
+    await currentUser.save()
+
+    // Create a new user
+    const user = new User()
+    user.username = 'nikk'
+
+    // Merge the new user into the current user
+    const mergedUser = currentUser.merge(user)
+
+    // Assert that the merged user has the correct attributes
+    assert.equal(mergedUser.username, 'nikk')
+    assert.equal(mergedUser.email, 'virk@adonisjs.com')
+  })
+
+  test('merge mutiple model instances', async ({ fs, assert }) => {
+    const app = new AppFactory().create(fs.baseUrl, () => {})
+    await app.init()
+    const db = getDb()
+    const adapter = ormAdapter(db)
+
+    const BaseModel = getBaseModel(adapter)
+
+    class User extends BaseModel {
+      @column({ isPrimary: true, meta: { type: 'number' } })
+      declare id: number
+
+      @column()
+      declare username: string
+
+      @column()
+      declare email: string
+    }
+
+    User.$adapter = adapter
+
+    await User.updateOrCreateMany('email', [
+      new User().fill({ username: 'nikk', email: 'nikk@adonisjs.com' }),
+      new User().fill({ username: 'virk', email: 'virk@adonisjs.com' }),
+    ])
+
+    await User.updateOrCreateMany('email', [
+      new User().fill({ username: 'nikk', email: 'nikk@adonisjs.com' }),
+      new User().fill({ username: 'virk-new', email: 'virk@adonisjs.com' }),
+    ])
+
+    const userResults = await User.all()
+
+    assert.equal(userResults.length, 2)
+
+    const virkUser = await User.query().where('email', 'virk@adonisjs.com').first();
+
+    assert.equal(virkUser?.username, 'virk-new')
+  })
+
   test('implement custom merge strategies using getters and setters', async ({ fs, assert }) => {
     const app = new AppFactory().create(fs.baseUrl, () => {})
     await app.init()
